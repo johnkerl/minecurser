@@ -1,21 +1,26 @@
-================================================================
-minesweeper.c:  A Minesweeper clone with a character interface.  Uses vi
+ms.c:  A Minesweeper clone with a character interface.  Uses vi
 keystrokes (e.g. h, j, k, l) to move around the screen (using curses), so you
 know it's got to be wonderful.
 
 Compile with
+```
   gcc ms.c -lcurses -o ms
+```
 
 Run with
+```
   ./ms
+```
 
 For help:
+```
   ./ms -h
+```
 
 John R. Kerl
 12/23/95
 
-================================================================
+# Usage
 * Cursor motion as in vi: h j k l 0 $ H M L
 * Set flags with f
 * Step with s
@@ -23,10 +28,10 @@ John R. Kerl
 * Control-C to quit early
 * Carriage return to quit at end of game
 
-================================================================
-Screenshots:
+# Screenshots
 
 Start of game:
+```
  + - - - - - - - - - - - - - - - +
  | . . . . . . . . . . . . . . . |
  | . . . . . . . . . . . . . . . |
@@ -45,8 +50,10 @@ Start of game:
  | . . . . . . . . . . . . . . . |
  + - - - - - - - - - - - - - - - +
  40/40
+```
 
 After one flag set and several steps:
+```
  + - - - - - - - - - - - - - - - +
  | . . . . . 1     1 . . . . . . |
  | . . . . . 1     1 2 . . . . . |
@@ -65,4 +72,5 @@ After one flag set and several steps:
  | . . . 1         1 . . . . . . |
  + - - - - - - - - - - - - - - - +
  39/40
+```
 
