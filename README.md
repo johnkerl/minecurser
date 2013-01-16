@@ -31,7 +31,7 @@ For help:
 
 # Screenshots
 
-Start of game:
+Start of game (blinking cursor invisible here):
 ```
  + - - - - - - - - - - - - - - - +
  | . . . . . . . . . . . . . . . |
