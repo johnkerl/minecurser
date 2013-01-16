@@ -2,6 +2,10 @@ ms.c:  A Minesweeper clone with a character interface.  Uses vi
 keystrokes (e.g. h, j, k, l) to move around the screen (using curses), so you
 know it's got to be wonderful.
 
+John R. Kerl
+12/23/95
+
+# Compiling and running
 Compile with
 ```
   gcc ms.c -lcurses -o ms
@@ -16,9 +20,6 @@ For help:
 ```
   ./ms -h
 ```
-
-John R. Kerl
-12/23/95
 
 # Usage
 * Cursor motion as in vi: h j k l 0 $ H M L
