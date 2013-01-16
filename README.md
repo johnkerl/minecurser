@@ -22,9 +22,9 @@ For help:
 ```
 
 # Usage
-* Cursor motion as in vi: h j k l 0 $ H M L
-* Set flags with f
-* Step with s
+* Cursor motion as in vi: `h j k l 0 $ H M L`
+* Set flags with `f`
+* Step with `s`
 * There is no question-mark-setting feature
 * Control-C to quit early
 * Carriage return to quit at end of game
