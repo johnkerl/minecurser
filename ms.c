@@ -156,7 +156,7 @@ int xsize=0, ysize=0;
  * used by almost every routine.
  */
 
-int  sighandler();
+void sighandler(int signum);
 int  get_grid_size_and_num_bombs();
 void initialize_grids();
 void get_next_move();
@@ -168,7 +168,7 @@ void display_cell();
 void display_external_grid();
 void usage();
 
-int sighandler()
+void sighandler(int signum)
 {
 	signal(SIGINT, SIG_IGN);
 	nocrmode();
@@ -190,6 +190,15 @@ void usage(prog)
 		prog?prog:"");
 	fprintf(stderr, "  -s/m/l are for small, medium or large display; -w is wide;\n");
 	fprintf(stderr, "  -f fills the window.\n");
+	fprintf(stderr, "Keystrokes:\n");
+	fprintf(stderr, "* Cursor motion is as in vi: h j k l 0 $ H M L\n");
+	fprintf(stderr, "* Set flags with f\n");
+	fprintf(stderr, "* Step with s\n");
+	fprintf(stderr, "* There is no question-mark-setting feature\n");
+	fprintf(stderr, "* Control-C to quit early\n");
+	fprintf(stderr, "* Carriage return to quit at end of game\n");
+	fprintf(stderr, "Status display at lower left is of the form 37/40 where 37 is the number of\n");
+	fprintf(stderr, "flags planted and 40 is the number of bombs to find.\n");
 	exit(1);
 }
 
@@ -303,7 +312,7 @@ int main(argc, argv)
 				getstr(line);
 	}
 
-	sighandler();
+	sighandler(0);
 	/* Just use the clean-up stuff in there to exit, since it's already coded */
 }
 
@@ -314,12 +323,8 @@ int get_grid_size_and_num_bombs(_number_of_bombs, argc, argv)
 	char **argv;
 {
 	int i;
-	bool need_to_calc_bombs=YES;
+	bool need_to_calc_bombs=TRUE;
 
-	if (argc<1)
-		return FALSE;
-	if (!argv)
-		return FALSE;
 	argv++, argc--; /* Ignore program name -- we don't care in this routine */
 
 	xsize=DEFAULT_X_SIZE;
@@ -329,51 +334,53 @@ int get_grid_size_and_num_bombs(_number_of_bombs, argc, argv)
 		if (strcmp(argv[0], "-s") == 0) { /* small */
 			xsize=15;
 			ysize=15;
-			break;
+			argv++; argc--;
 		}
 		else if (strcmp(argv[0], "-m") == 0) { /*medium */
 			xsize=20;
 			ysize=20;
-			break;
+			argv++; argc--;
 		}
 		else if (strcmp(argv[0], "-l") == 0) { /* large */
 			xsize=35;
 			ysize=20;
-			break;
+			argv++; argc--;
 		}
 		else if (strcmp(argv[0], "-w") == 0) { /* wide */
 			xsize=35;
 			ysize=12;
-			break;
+			argv++; argc--;
 		}
 		else if (strcmp(argv[0], "-f") == 0) { /* fill the window */
 			/*xsize=(COLS-3)/2;*/
 			xsize=(COLS/2) - 3;
 			ysize=LINES-3;
-			break;
+			argv++; argc--;
 		}
-		if (strcmp(argv[0], "-x") == 0) {
+		else if (strcmp(argv[0], "-x") == 0) {
 			if (argc<2)
 				return FALSE;
-			if(sscanf(argv[1], "%d", &xsize) < 1)
+			if (sscanf(argv[1], "%d", &xsize) < 1)
 				return FALSE;
+			argv+=2; argc-=2;
 		}
 		else if (strcmp(argv[0], "-y") == 0) {
 			if (argc<2)
 				return FALSE;
-			if(sscanf(argv[1], "%d", &ysize) < 1)
+			if (sscanf(argv[1], "%d", &ysize) < 1)
 				return FALSE;
+			argv+=2; argc-=2;
 		}
 		else if (strcmp(argv[0], "-n") == 0) {
 			if (argc<2)
 				return FALSE;
-			if(sscanf(argv[1], "%d", _number_of_bombs) < 1)
+			if (sscanf(argv[1], "%d", _number_of_bombs) < 1)
 				return FALSE;
 			need_to_calc_bombs=FALSE;
+			argv+=2; argc-=2;
 		}
 		else
 			return FALSE;
-		argv+=2; argc-=2;
 	}
 
 	/* Now do some sanity checks ... */
@@ -396,7 +403,6 @@ int get_grid_size_and_num_bombs(_number_of_bombs, argc, argv)
 			 */
 		}
 	}
-
 	X_STRIDE=2;
 	Y_STRIDE=1;
 	X_OFFSET=1;
@@ -434,7 +440,7 @@ void initialize_grids(number_of_bombs)
 			fprintf(stderr, "xsize = %d; ysize = %d\n",
 					xsize, ysize);
 			sleep(2);
-			sighandler();
+			sighandler(0);
 		}
 		random_pair(1, xsize, 1, ysize, &random_x, &random_y);
 		if (igrid[random_x][random_y] != BOMB) {
@@ -466,7 +472,7 @@ void initialize_grids(number_of_bombs)
 			if (igrid[i3][j2] == BOMB) number_of_neighbors++;
 			if (igrid[i3][j3] == BOMB) number_of_neighbors++;
 
-			if(number_of_neighbors > 0)
+			if (number_of_neighbors > 0)
 				igrid[i][j]=number_of_neighbors+ZERO;
 		}
 	}
@@ -700,44 +706,48 @@ void reveal_all()
  * (diagonals do not count).
  */
 
-void cascade(cascx, cascy)
+static void mark_ripples(int cascx, int cascy)
 {
-	bool steady_state;
-	int i, j;
-	int i1, i2, i3, j1, j2, j3;
+	if (cascx < 1)     return;
+	if (cascx > xsize) return;
+	if (cascy < 1)     return;
+	if (cascy > ysize) return;
 
-
-	if (igrid[cascx][cascy] != BLANK)  /* Just for safety's sake */
+	if ((igrid[cascx][cascy] != BLANK) || (egrid[cascx][cascy] == FLAG))
 		return;
 
-	igrid[cascx][cascy]=RIPPLE;
-	steady_state = FALSE;
-	while (steady_state == FALSE) {
-		steady_state=TRUE;
-		for (i=1; i<=xsize; i++) {
-			for (j=1; j<=ysize; j++) {
-				if (  (igrid[i][j] != BLANK) ||
-						(egrid[i][j] == FLAG))
-					;
-				else if ((igrid[i-1][ j ] == RIPPLE) ||
-							(igrid[i+1][ j ] == RIPPLE) ||
-							(igrid[ i ][j-1] == RIPPLE) ||
-							(igrid[ i ][j+1] == RIPPLE))
-				{
-				/*	... found a new element of the cascade path. */
-					steady_state=FALSE;
-					igrid[i][j]=RIPPLE;
-					display_cell(i,j,BLANK, NO);
-				}
-			}
-		}
-	}
 
-	/* Now turn ripples back into blanks: */
+	igrid[cascx][cascy] = RIPPLE;
+	display_cell(cascx,cascy,BLANK, NO);
+
+	mark_ripples(cascx-1, cascy);
+	mark_ripples(cascx+1, cascy);
+	mark_ripples(cascx,   cascy-1);
+	mark_ripples(cascx,   cascy+1);
+}
+
+/* Turn ripples back into blanks */
+static void unripple()
+{
+	int i, j;
+
 	for (i=1; i<=xsize; i++)
 		for (j=1; j<=ysize; j++)
 			if (igrid[i][j]==RIPPLE)
 				igrid[i][j] = egrid[i][j] = BLANK;
+}
+
+void cascade(cascx, cascy)
+{
+	int i, j;
+	int i1, i2, i3, j1, j2, j3;
+
+	if (igrid[cascx][cascy] != BLANK)  /* Just for safety's sake */
+		return;
+
+	//mark_ripples_slow(cascx, cascy);
+	mark_ripples(cascx, cascy);
+	unripple();
 
 	/* If a cell with a non-zero neighbor count borders an exposed blank,
 	 * uncover it.
