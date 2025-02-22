@@ -1,4 +1,4 @@
-ms.c:  A Minesweeper clone with a character interface.  Uses vi
+`ms.c`:  A Minesweeper clone with a character interface.  Uses vi
 keystrokes (e.g. h, j, k, l) to move around the screen (using curses), so you
 know it's got to be wonderful.  A simple lark project.
 
